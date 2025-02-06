@@ -12,7 +12,7 @@ base = '/root/autodl-tmp/document_parses/pdf_json/'
 
 destination = '/root/autodl-tmp/document_parses/pdf_parsed/'
 
-sample_dir = './file_samples'
+sample_dir = './cache'
 
 random_start = True   # Start from a random paper, DEBUGGING ONLY!
 
@@ -84,6 +84,6 @@ if copy_samples:
     parsed_files = os.listdir(destination)
     random.shuffle(parsed_files)
     for f in parsed_files[:10]:
-        shutil.copy(os.path.join(destination, f), os.path.join('file_samples', f))
+        shutil.copy(os.path.join(destination, f), os.path.join(sample_dir, f))
 
 # shutil.copy(os.path.join(destination, 'f3cd160d6f257ff433386449d7b1d52f337a193f.txt'), os.path.join('file_samples','f3cd160d6f257ff433386449d7b1d52f337a193f.txt'))
