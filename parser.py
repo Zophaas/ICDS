@@ -71,7 +71,12 @@ for filename in tqdm(os.listdir(base)[start_from:start_from+cutoff]):
             f.write('\n')
 
     else:
+        fm.write(title)
+        fm.write('\n')
+        fm.write(abstract)
+        fm.write('\n')
         fm.write(body_text_purged)
+        fm.write('\n')
 
 if merge:
     fm.close()
