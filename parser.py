@@ -1,21 +1,21 @@
 import random
+import re
 
 from tqdm import tqdm
 import json
 import os
 import shutil
 from config import *
-from os import path
 
 #%% Configuration
 
-random_start = True   # Start from a random paper, DEBUGGING ONLY!
+random_start = False   # Start from a random paper, DEBUGGING ONLY!
 
-cutoff = 100   # How many papers to run on, -1 for all, disable random start for large numbers
+cutoff = 10000   # How many papers to run on, -1 for all, disable random start for large numbers
 
 merge = True    # Merge the file into one or not
 
-copy_merge_to_wd = True
+copy_merge_to_wd = False
 
 copy_samples = False  # Leave as False
 
@@ -47,31 +47,28 @@ for filename in tqdm(os.listdir(base_dir)[start_from:start_from + cutoff]):
         title = json_data['metadata']['title']
         abstract = json_data['abstract'][0]['text'] if json_data['abstract'] else ''
         body_text_raw = json_data['body_text']
-        body_text_purged = ''
+        body_text = ''
         for segment in body_text_raw:
             raw_text = segment['text']
             for cite in segment['cite_spans']:
-                if cite['ref_id']:
+                if cite['ref_id']!='':
                     raw_text = raw_text.replace(cite['text'], '')
-            body_text_purged+=raw_text+'\n'
+            body_text+= raw_text.strip() + '\n'
+        body_text = re.sub(r'\\u[0-9a-fA-F]{4}', '', body_text)
+        body_text_purged = re.sub(r'\[\d+]', '', body_text)
         # print(cite['text'],end=' ') if not random.randint(0,10) else None
 
     if not merge:
         with open(os.path.join(destination_dir, paper_id + '.txt'), 'w') as f:
-            f.write(title)
-            f.write('\n')
-            f.write(abstract)
-            f.write('\n')
-            f.write(body_text_purged)
-            f.write('\n')
+            f.write(title+'\n')
+            f.write(abstract+'\n')
+            f.write(body_text_purged + '\n')
 
     else:
-        fm.write(title)
-        fm.write('\n')
-        fm.write(abstract)
-        fm.write('\n')
-        fm.write(body_text_purged)
-        fm.write('\n')
+        fm.write(paper_id+'\n')
+        fm.write(title+'\n')
+        fm.write(abstract+'\n')
+        fm.write(body_text_purged + '\n')
 
 if merge:
     fm.close()
@@ -86,4 +83,4 @@ if copy_samples:
     for f in parsed_files[:10]:
         shutil.copy(os.path.join(destination_dir, f), os.path.join(sample_dir, f))
 
-# shutil.copy(os.path.join(destination_dir, 'f3cd160d6f257ff433386449d7b1d52f337a193f.txt'), os.path.join('file_samples','f3cd160d6f257ff433386449d7b1d52f337a193f.txt'))
+#shutil.copy(os.path.join(base_dir, '45473537ad2c61d0c9cbeedeb80f93fb9bce8b89.json'), os.path.join(sample_dir,'45473537ad2c61d0c9cbeedeb80f93fb9bce8b89.json'))
