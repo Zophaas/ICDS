@@ -11,7 +11,7 @@ from config import *
 
 random_start = False   # Start from a random paper, DEBUGGING ONLY!
 
-cutoff = 10000   # How many papers to run on, -1 for all, disable random start for large numbers
+cutoff = -1   # How many papers to run on, -1 for all, disable random start for large numbers
 
 merge = True    # Merge the file into one or not
 
@@ -20,8 +20,10 @@ copy_merge_to_wd = False
 copy_samples = False  # Leave as False
 
 #%% Code
-
-start_from = random.randint(1,10000)
+if random_start:
+    start_from = random.randint(1,10000)
+else:
+    start_from = 0
 
 if copy_merge_to_wd and (cutoff>1000):
     prompt = input('File may be too large, are you sure to copy? [y/N]')
@@ -38,10 +40,10 @@ os.makedirs(sample_dir, exist_ok=True)
 
 
 if merge:
-    fm = open(os.path.join(destination_dir, 'merged.txt'), 'w')
+    fm = open(os.path.join(destination_dir, 'merged.txt'), 'w', encoding = 'utf-8')
 
 for filename in tqdm(os.listdir(base_dir)[start_from:start_from + cutoff]):
-    with open(os.path.join(base_dir, filename), 'r') as f:
+    with open(os.path.join(base_dir, filename), 'r', encoding = 'utf-8') as f:
         json_data = json.load(f)
         paper_id = json_data['paper_id']
         title = json_data['metadata']['title']
@@ -59,7 +61,7 @@ for filename in tqdm(os.listdir(base_dir)[start_from:start_from + cutoff]):
         # print(cite['text'],end=' ') if not random.randint(0,10) else None
 
     if not merge:
-        with open(os.path.join(destination_dir, paper_id + '.txt'), 'w') as f:
+        with open(os.path.join(destination_dir, paper_id + '.txt'), 'w', encoding = 'utf-8') as f:
             f.write(title+'\n')
             f.write(abstract+'\n')
             f.write(body_text_purged + '\n')
