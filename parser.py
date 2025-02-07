@@ -4,15 +4,10 @@ from tqdm import tqdm
 import json
 import os
 import shutil
+from config import *
 from os import path
 
 #%% Configuration
-
-base = '/root/autodl-tmp/document_parses/pdf_json/'
-
-destination = '/root/autodl-tmp/document_parses/pdf_parsed/'
-
-sample_dir = './cache'
 
 random_start = True   # Start from a random paper, DEBUGGING ONLY!
 
@@ -33,9 +28,9 @@ if copy_merge_to_wd and (cutoff>1000):
     if not prompt in ('y', 'Y'):
         copy_merge_to_wd = False
 
-if os.path.exists(destination):
-    shutil.rmtree(destination)
-os.makedirs(destination, exist_ok=True)
+if os.path.exists(destination_dir):
+    shutil.rmtree(destination_dir)
+os.makedirs(destination_dir, exist_ok=True)
 
 if os.path.exists(sample_dir):
     shutil.rmtree(sample_dir)
@@ -43,10 +38,10 @@ os.makedirs(sample_dir, exist_ok=True)
 
 
 if merge:
-    fm = open(os.path.join(destination, 'merged.txt'), 'w')
+    fm = open(os.path.join(destination_dir, 'merged.txt'), 'w')
 
-for filename in tqdm(os.listdir(base)[start_from:start_from+cutoff]):
-    with open(os.path.join(base, filename), 'r') as f:
+for filename in tqdm(os.listdir(base_dir)[start_from:start_from + cutoff]):
+    with open(os.path.join(base_dir, filename), 'r') as f:
         json_data = json.load(f)
         paper_id = json_data['paper_id']
         title = json_data['metadata']['title']
@@ -62,7 +57,7 @@ for filename in tqdm(os.listdir(base)[start_from:start_from+cutoff]):
         # print(cite['text'],end=' ') if not random.randint(0,10) else None
 
     if not merge:
-        with open(os.path.join(destination, paper_id+'.txt'), 'w') as f:
+        with open(os.path.join(destination_dir, paper_id + '.txt'), 'w') as f:
             f.write(title)
             f.write('\n')
             f.write(abstract)
@@ -83,12 +78,12 @@ if merge:
 
 
 if copy_merge_to_wd:
-    shutil.copy(os.path.join(destination, 'merged.txt'), os.path.join(sample_dir, 'merged.txt'))
+    shutil.copy(os.path.join(destination_dir, 'merged.txt'), os.path.join(sample_dir, 'merged.txt'))
 
 if copy_samples:
-    parsed_files = os.listdir(destination)
+    parsed_files = os.listdir(destination_dir)
     random.shuffle(parsed_files)
     for f in parsed_files[:10]:
-        shutil.copy(os.path.join(destination, f), os.path.join(sample_dir, f))
+        shutil.copy(os.path.join(destination_dir, f), os.path.join(sample_dir, f))
 
-# shutil.copy(os.path.join(destination, 'f3cd160d6f257ff433386449d7b1d52f337a193f.txt'), os.path.join('file_samples','f3cd160d6f257ff433386449d7b1d52f337a193f.txt'))
+# shutil.copy(os.path.join(destination_dir, 'f3cd160d6f257ff433386449d7b1d52f337a193f.txt'), os.path.join('file_samples','f3cd160d6f257ff433386449d7b1d52f337a193f.txt'))
