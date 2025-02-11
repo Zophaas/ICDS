@@ -3,6 +3,10 @@ from tokenizers import ByteLevelBPETokenizer
 import multiprocessing
 from tqdm import tqdm
 
+import config
+
+merge = True
+
 def tokenize_chunk(chunk_args):
     string, tokenizer_path = chunk_args
     ids, tokens = tokenize_string(string, tokenizer_path)
@@ -12,7 +16,7 @@ def tokenize_string(string, tokenizer_path):
     """Tokenize a file chunk"""
     tokenizer = ByteLevelBPETokenizer.from_file(os.path.join(tokenizer_path,'vocab.json'),
                                                 os.path.join(tokenizer_path,'merges.txt'))
-    encoded = tokenizer.encode(string.lower())
+    encoded = tokenizer.encode(string)
     return encoded.ids, encoded.tokens
 
 def write_tokenized_file(output_dir:str, input_file:str, vocab_dir:str, chunk_size = 10*1024*1024):
@@ -34,3 +38,7 @@ def write_tokenized_file(output_dir:str, input_file:str, vocab_dir:str, chunk_si
             out_f.write(' '.join(map(str, tokenized_chunk)) + '\n')
 
     print(f"Large file tokenization complete. Output in {output_file}")
+
+def main():
+
+
