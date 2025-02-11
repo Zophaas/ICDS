@@ -12,6 +12,7 @@ token_input_by_file = True
 
 if token_input_by_file:
     sentences = LineSentence(os.path.join(tokenized_dir, 'tokens.txt')) 
+
 else:
     with open(os.path.join(destination_dir, 'merged.txt'), 'r', encoding='utf-8') as file:
         string = file.read()
@@ -32,21 +33,11 @@ else:
 
 print("sentences are ready.")
 
+model = Word2Vec.load("word2vec_sg.model")
 
-model = Word2Vec(vector_size=256, window=5, min_count=1, workers=4, sg=1)
+word_list=['Ġto', 'Ġbe', 'Ġaffected', 'Ġby', 'ĠCO', 'VID', '-', '19', 'Ġwith', 'Ġboth']
 
-model.build_vocab(sentences)
+word_vectors = {word: model.wv[word] for word in word_list if word in model.wv}
 
-# 分步训练模型
-for epoch in range(10):  # 假设训练 10 轮
-    model.train(sentences, total_examples=model.corpus_count, epochs=1)
-    print(f"Epoch {epoch + 1} completed")
-
-# 保存模型
-model.save("word2vec_sg.model")
-
-# 获得词向量
-word_vectors = model.wv
-
-for word in word_vectors.index_to_key[:10]:
-    print(f"Word: {word}, Vector: {word_vectors[word]}")
+for word, vector in word_vectors.items():
+    print(f"Word: {word}, Vector: {vector}")
