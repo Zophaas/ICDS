@@ -13,9 +13,9 @@ random_start = False   # Start from a random paper, DEBUGGING ONLY!
 
 cutoff = -1   # How many papers to run on, -1 for all, disable random start for large numbers
 
-merge = True    # Merge the file into one or not
+merge = False    # Merge the file into one or not
 
-copy_merge_to_wd = False
+copy_merge_to_wd = False  # Leave as False
 
 copy_samples = False  # Leave as False
 
@@ -30,12 +30,8 @@ if copy_merge_to_wd and (cutoff>1000):
     if not prompt in ('y', 'Y'):
         copy_merge_to_wd = False
 
-if os.path.exists(destination_dir):
-    shutil.rmtree(destination_dir)
-os.makedirs(destination_dir, exist_ok=True)
 
-if os.path.exists(sample_dir):
-    shutil.rmtree(sample_dir)
+os.makedirs(destination_dir, exist_ok=True)
 os.makedirs(sample_dir, exist_ok=True)
 
 
