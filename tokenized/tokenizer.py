@@ -5,13 +5,14 @@ from tqdm import tqdm
 
 def tokenize_chunk(chunk_args):
     string, tokenizer_path = chunk_args
-    return  tokenize_string(string, tokenizer_path)
+    ids, tokens = tokenize_string(string, tokenizer_path)
+    return tokens
 
 def tokenize_string(string, tokenizer_path):
     """Tokenize a file chunk"""
     tokenizer = ByteLevelBPETokenizer.from_file(os.path.join(tokenizer_path,'vocab.json'),
                                                 os.path.join(tokenizer_path,'merges.txt'))
-    encoded = tokenizer.encode(string)
+    encoded = tokenizer.encode(string.lower())
     return encoded.ids, encoded.tokens
 
 def write_tokenized_file(output_dir:str, input_file:str, vocab_dir:str, chunk_size = 10*1024*1024):
@@ -27,7 +28,7 @@ def write_tokenized_file(output_dir:str, input_file:str, vocab_dir:str, chunk_si
 
         # Stream and tokenize chunks
         chunks = iter(lambda: f.read(chunk_size), '')
-        chunk_args = [(chunk, os.path.join(vocab_dir, 'vocab.json')) for chunk in chunks]
+        chunk_args = [(chunk, vocab_dir) for chunk in chunks]
 
         for tokenized_chunk in tqdm(pool.imap(tokenize_chunk, chunk_args)):
             out_f.write(' '.join(map(str, tokenized_chunk)) + '\n')
