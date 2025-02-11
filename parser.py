@@ -30,7 +30,8 @@ if copy_merge_to_wd and (cutoff>1000):
     if not prompt in ('y', 'Y'):
         copy_merge_to_wd = False
 
-
+if os.path.exists(destination_dir):
+    shutil.rmtree(destination_dir)
 os.makedirs(destination_dir, exist_ok=True)
 os.makedirs(sample_dir, exist_ok=True)
 
