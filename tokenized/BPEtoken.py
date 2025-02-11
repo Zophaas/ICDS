@@ -11,7 +11,7 @@ write_to_file = False
 def BPE_tokenize_file(input_file, destination, write_to_file):
     # Initialize the tokenizer
     tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-    print("Tokenizer initialized...")
+    print("Tokenizer initialized.")
     
     # Read the file
     with open(os.path.join(input_file, 'merged.txt'), 'r', encoding='utf-8') as file:
@@ -30,10 +30,10 @@ def BPE_tokenize_file(input_file, destination, write_to_file):
         if not os.path.exists(destination):
             os.makedirs(destination, exist_ok=True)
         
-        with open(path.join(destination, 'BPE_tokenized.txt'), 'w', encoding='utf-8') as file:
+        with open(path.join(destination, 'tokens.txt'), 'w', encoding='utf-8') as file:
             for token in tqdm(tokens, desc="Writing tokens"):
                 file.write(token+ "\n")
-        with open(path.join(destination, 'BPE_tokenized_ids.txt'), 'w', encoding='utf-8') as file:
+        with open(path.join(destination, 'token_ids.txt'), 'w', encoding='utf-8') as file:
             for token_id in tqdm(token_ids, desc="Writing token IDs"):
                 file.write(str(token_id) + "\n")
 
