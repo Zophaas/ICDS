@@ -10,7 +10,7 @@ from tokenizers.models import BPE
 
 save_model = True
 
-def train_tokenizer(input_files, vocab_dir, vocab_size=10000):
+def train_tokenizer(input_files, vocab_dir, vocab_size=30000):
     """Train BPE tokenizer on large file"""
     tokenizer = ByteLevelBPETokenizer()
     # Train tokenizer first
