@@ -5,51 +5,59 @@ import numpy as np
 from adjustText import adjust_text
 import gc
 
-def process_and_visualize_embeddings(model_path, start_idx=500, end_idx=1000, perplexity=5):
+def process_and_visualize_embeddings(model_path, start_idx, end_idx, perplexity=5):
     """
-    加载模型并可视化词嵌入，保留带Ġ的词（去掉Ġ前缀），过滤掉不带Ġ的词
+    Load the model and visualize the word embeddings, keep the words with Ġ (remove the Ġ prefix) and filter out the words without Ġ
+
+    model_path: str, path to the word2vec model
+
+    start_idx: int, start index of the words to visualize
+
+    end_idx: int, end index of the words to visualize
+
+    perplexity: int, t-SNE perplexity parameter
+
     """
-    # 加载模型
+    # load the model
     model = KeyedVectors.load(model_path)
     word2vec_model = model.wv
 
-    # 处理词表：保留带Ġ的词（去掉前缀），过滤掉不带Ġ的词
+    # Process the words: remove the Ġ prefix and keep the words with Ġ
     processed_words = []
     processed_vectors = []
 
     for word in word2vec_model.index_to_key[start_idx:end_idx]:
         if word.startswith('Ġ'):
-            # 保留带Ġ的词，但去掉Ġ前缀
-            processed_word = word[1:]  # 去掉Ġ前缀
+            processed_word = word[1:]  # remove the Ġ prefix
             processed_words.append(processed_word)
             processed_vectors.append(word2vec_model[word])
 
-    print(f"原始词数: {end_idx - start_idx}")
-    print(f"处理后词数: {len(processed_words)}")
+    print(f"original word count: {end_idx - start_idx}")
+    print(f"Number of words after processing: {len(processed_words)}")
     gc.collect()
     if not processed_words:
-        print("没有找到带Ġ前缀的词")
+        print("No words with Ġ prefix found.")
         return [], []
 
-    # 转换为numpy数组
+    # Convert the processed vectors to a numpy array
     word_vectors = np.array(processed_vectors)
 
-    # 使用t-SNE降维
+    # use t-SNE to reduce the dimensionality of the word vectors
     tsne = TSNE(n_components=2, perplexity=perplexity, random_state=42)
     reduced_vectors = tsne.fit_transform(word_vectors)
     gc.collect()
 
-    # 创建可视化
+    # Visualize the word embeddings
     plt.figure(figsize=(12, 8))
     scatter = plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], alpha=0.6)
 
-    # 添加词标签（使用处理后的词）
+    # Add text labels to the points
     texts = []
     for i, word in enumerate(processed_words):
         texts.append(plt.text(reduced_vectors[i, 0], reduced_vectors[i, 1],
                               word, fontsize=8, alpha=0.7))
 
-    # 自动调整文本位置避免重叠
+    # Adjust the text labels to avoid overlap
     adjust_text(texts, arrowprops=dict(arrowstyle="-", color='gray', lw=0.5))
 
     plt.title("Word Embeddings Visualization (Processed Tokens)")
@@ -59,17 +67,17 @@ def process_and_visualize_embeddings(model_path, start_idx=500, end_idx=1000, pe
     return processed_words, reduced_vectors
 
 
-# 使用示例
-model_path = "../representation/word2vec_sg1.model"
+# example usage
+model_path = "D:\\studyyyy\\program\\nlp-git\\ICDS\\word2vec_sg1.model"
 processed_words, vectors = process_and_visualize_embeddings(
     model_path=model_path,
-    start_idx=500,
-    end_idx=1000,
+    start_idx=300,
+    end_idx=700,
     perplexity=5
 )
 
-# 打印一些处理后的词示例
-print("\n处理后的词示例:")
+# Print the first 10 processed words
+print("\nexample processsed words:")
 for word in processed_words[:10]:
     print(word)
 
