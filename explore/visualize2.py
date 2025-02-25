@@ -5,6 +5,7 @@ from sklearn.manifold import TSNE
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
+from adjustText import adjust_text
 
 
 def load_medical_terms_with_categories(json_path: str) -> Tuple[set, Dict[str, str]]:
@@ -98,6 +99,7 @@ def visualize_medical_terms(term_categories: Dict[str, str], model_path: str):
     plt.figure(figsize=(15, 10))
 
     # 为每个类别绘制散点图
+    texts = []
     for category in unique_categories:
         # 获取该类别的点
         mask = [c == category for c in categories]
@@ -112,11 +114,16 @@ def visualize_medical_terms(term_categories: Dict[str, str], model_path: str):
 
         # 添加词汇标注
         for i, word in enumerate(cat_words):
-            plt.annotate(word,
-                         (cat_vectors[i, 0], cat_vectors[i, 1]),
-                         fontsize=8,
-                         alpha=0.7)
+            text = plt.text(
+                cat_vectors[i, 0],
+                cat_vectors[i, 1],
+                word,
+                fontsize=8,
+                alpha=0.7
+            )
+            texts.append(text)
 
+    adjust_text(texts, arrowprops=dict(arrowstyle="-", color='gray', lw=0.5))
     plt.title("Medical Terms Distribution by Category")
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
@@ -150,6 +157,6 @@ def process_file(medical_terms_json_path: str, model_path: str):
 
 # 使用示例
 if __name__ == "__main__":
-    medical_terms_json_path = r"C:\Users\HP\Desktop\pycharm\put jupyter here\winter school\ICDS\data\medical_terms copy.json"
-    model_path = "../representation/word2vec_sg1.model"
+    medical_terms_json_path = r"../data/medical_terms.json"
+    model_path = "../representation/word2vec_model_10000.model"
     term_categories = process_file(medical_terms_json_path, model_path)

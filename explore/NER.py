@@ -5,8 +5,8 @@ import spacy
 nlp = spacy.load("en_ner_bc5cdr_md")
 
 # 读取 JSON 词汇表
-vocab_path = "vocab.json"
-output_path = "medical_terms.json"
+vocab_path = "../vocab/vocab.json"
+output_path = "../data/medical_terms.json"
 
 with open(vocab_path, "r", encoding="utf-8") as file:
     vocab = json.load(file)

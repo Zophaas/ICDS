@@ -2,6 +2,9 @@ import re
 from collections import Counter
 import matplotlib.pyplot as plt
 import gc
+from multiprocessing import Pool, cpu_count
+from functools import partial
+from tqdm import tqdm
 
 
 def load_medical_terms(file_path: str) -> set:
@@ -18,41 +21,60 @@ def load_medical_terms(file_path: str) -> set:
         return set()
 
 
-def find_covid_pattern(text: str) -> list:
-    """
-    按 '.' 和 ',' 切分文本，并查找包含 'COVID-19' 相关词的句子
-    """
-    sentence_pattern = r'[^.,]+'
-    sentences = re.findall(sentence_pattern, text)
-    contexts = []
+def chunk_file(file_path: str, chunk_size: int = 10 * 1024 * 1024) -> list:
+    """将文件分割成块"""
+    chunks = []
+    current_chunk = []
+    current_size = 0
 
-    for sentence in sentences:
-        words = sentence.split()
-        cleaned_words = [word.replace('Ġ', '').strip().lower() for word in words if word.strip()]
+    with open(file_path, 'r', encoding='utf-8') as file:
+        for line in tqdm(file,desc = 'lines'):
+            current_chunk.append(line)
+            current_size += len(line.encode('utf-8'))
 
-        if any(covid_variant in cleaned_words for covid_variant in ['covid', 'covid-19', 'covid19']):
-            contexts.append(cleaned_words)
+            if current_size >= chunk_size:
+                chunks.append(''.join(current_chunk))
+                current_chunk = []
+                current_size = 0
 
-    return contexts
+        if current_chunk:  # 添加最后一个块
+            chunks.append(''.join(current_chunk))
+
+    return chunks
 
 
-def analyze_medical_cooccurrence(contexts: list, medical_terms: set) -> dict:
-    """分析医疗术语的共现频率"""
+def find_covid_pattern(text: str, medical_terms: set) -> Counter:
+    """查找包含 'COVID-19' 相关词的句子并分析医疗术语"""
+
+    # 按 . , 分割句子
+    sentences = text.replace('\n', ' ').split('.')
+    sentences = [s for sentence in sentences for s in sentence.split(',')]
+
     medical_cooccurrence = []
+
     stop_words = {
         'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
         'of', 'with', 'by', '-', '19', 'covid', 'covid-19', 'covid19', 'from', 'positive', 'severe', 'clinical',
         'negative', 'other', 'time', 'high', 'related', 'associated', 'information', 'over', 'factor', 'specific'
     }
 
-    for context in contexts:
-        medical_words = [
-            word for word in context
-            if word in medical_terms and word not in stop_words
-        ]
-        medical_cooccurrence.extend(medical_words)
+    for sentence in tqdm(sentences):
+        words = sentence.split()
+        cleaned_words = [word.strip().lower() for word in words if word.strip()]
+
+        if any(covid_variant in cleaned_words for covid_variant in ['covid', 'covid-19', 'covid19']):
+            medical_words = [
+                word for word in cleaned_words
+                if word in medical_terms and word not in stop_words
+            ]
+            medical_cooccurrence.extend(medical_words)
 
     return Counter(medical_cooccurrence)
+
+
+def process_chunk(chunk: str, medical_terms: set) -> Counter:
+    """处理单个文本块"""
+    return find_covid_pattern(chunk, medical_terms)
 
 
 def plot_medical_frequencies(word_freq: dict, top_n: int = 10):
@@ -65,6 +87,7 @@ def plot_medical_frequencies(word_freq: dict, top_n: int = 10):
         return
 
     words, freqs = zip(*top_words)
+    words = [word.replace('ġ','') for word in words]
 
     plt.bar(range(len(words)), freqs)
     plt.xticks(range(len(words)), words, rotation=45, ha='right')
@@ -76,25 +99,43 @@ def plot_medical_frequencies(word_freq: dict, top_n: int = 10):
 
 
 def process_file(tokens_file_path: str, medical_terms_path: str):
-    """处理文件并分析医疗术语"""
+    """使用多进程处理文件并分析医疗术语"""
     try:
+        # 加载医疗术语
         medical_terms = load_medical_terms(medical_terms_path)
         print(f"加载了 {len(medical_terms)} 个医疗相关词语")
 
         if not medical_terms:
             return
 
-        with open(tokens_file_path, 'r', encoding='utf-8') as file:
-            text = file.read()
+        # 将文件分块
+        print("正在将文件分块...")
+        chunks = chunk_file(tokens_file_path)
+        print(f"文件被分成了 {len(chunks)} 个块")
 
-        contexts = find_covid_pattern(text)
+        # 设置进程数
+        num_processes = 32  # 留出一个CPU核心
+        print(f"使用 {num_processes} 个进程进行处理")
 
-        if not contexts:
-            print("未找到匹配的COVID-19模式")
-            return
+        # 创建进程池并处理
+        with Pool(num_processes) as pool:
+            # 使用partial固定medical_terms参数
+            process_func = partial(process_chunk, medical_terms=medical_terms)
 
-        medical_frequencies = analyze_medical_cooccurrence(contexts, medical_terms)
+            # 使用tqdm显示进度
+            results = list(tqdm(
+                pool.imap(process_func, chunks),
+                total=len(chunks),
+                desc="处理进度"
+            ))
+
+        # 合并所有Counter结果
+        medical_frequencies = Counter()
+        for result in results:
+            medical_frequencies.update(result)
+
         gc.collect()
+
         if not medical_frequencies:
             print("未找到相关医疗术语")
             return
@@ -111,10 +152,12 @@ def process_file(tokens_file_path: str, medical_terms_path: str):
         print(f"找不到文件: {tokens_file_path}")
     except Exception as e:
         print(f"处理文件时出错: {str(e)}")
+    finally:
+        gc.collect()
 
 
 if __name__ == "__main__":
-    tokens_file_path = r"H:\\document_parses\\document_parses\\data\\tokenized\\tokens.txt"
-    medical_terms_path = r"C:\\Users\\HP\\Desktop\\pycharm\\put jupyter here\\winter school\\ICDS\\data\\entities_tokens.txt"
+    tokens_file_path = '../cache/merged_tokenized.txt'
+    medical_terms_path = '../data/entities_tokens.txt'
     medical_frequencies = process_file(tokens_file_path, medical_terms_path)
     gc.collect()
